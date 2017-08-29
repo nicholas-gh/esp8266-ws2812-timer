@@ -1,3 +1,6 @@
 [submodule "lib/esp8266-arduino-restclient"]
 	path = lib/esp8266-arduino-restclient
 	url = https://github.com/modulusx/esp8266-arduino-restclient
+[submodule "lib/fauxmoesp"]
+	path = lib/fauxmoesp
+	url = https://bitbucket.org/xoseperez/fauxmoesp.git

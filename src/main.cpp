@@ -6,6 +6,7 @@
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
+#include <fauxmoESP.h>
 
 #include "settings.h"
 
@@ -18,13 +19,18 @@ extern "C" {
 #define PIXEL_COUNT 41
 #define TIMER_LENGTH 5*60*1000
 
-
 restclient hue(HUE_IP,HUE_PORT);
+
+fauxmoESP fauxmo;
 
 const char LIGHTS_ON[] = "{\"on\":true}";
 const char LIGHTS_OFF[] = "{\"on\":false}";
 const char EFFECT_COLORLOOP[] = "{\"effect\":\"colorloop\"}";
 const char EFFECT_NONE[] = "{\"effect\":\"none\"}";
+
+bool running = false;
+bool finished = false;
+int litPixels = 0;
 
 os_timer_t myTimer;
 bool tickOccured;
@@ -99,20 +105,33 @@ void setup() {
   });
   ArduinoOTA.begin();
 
+
+  fauxmo.addDevice("bus lights");
+  fauxmo.onMessage([](unsigned char device_id, const char * device_name, bool state) {
+      if (state) {
+        running = true;
+      } else {
+        running = false;
+        for (int i = 0; i < PIXEL_COUNT; i++) {
+          strip.setPixelColor(i, strip.Color(0, 0, 0));
+        }
+        litPixels = 0;
+        strip.show();
+      }
+    });
+
 }
 
-bool running = false;
-bool finished = false;
-int litPixels = 0;
 void loop() {
   ArduinoOTA.handle();
+  fauxmo.handle();
 
   int val = digitalRead(BUTTON_PIN);
   digitalWrite(BUILTIN_LED, val);
   if (running) {
     if (val == false) {
       running = false;
-      for (int i; i < PIXEL_COUNT; i++) {
+      for (int i = 0; i < PIXEL_COUNT; i++) {
         strip.setPixelColor(i, strip.Color(0, 0, 0));
       }
       litPixels = 0;
